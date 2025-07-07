@@ -1,0 +1,17 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio folder
+.vs/
+
+# User-specific files
+*.user
+*.suo
+*.cache
+
+# Rider or JetBrains IDEs
+.idea/
+
+# Others
+*.log
