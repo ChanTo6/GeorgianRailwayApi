@@ -1,0 +1,86 @@
+using GeorgianRailwayApi.Data;
+using GeorgianRailwayApi.Repositories.TicketRepositoryFile;
+using GeorgianRailwayApi.Repositories.TrainRepositoryFile;
+using GeorgianRailwayApi.Services.TicketService;
+using GeorgianRailwayApi.Services.Token;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
+using System.Text;
+using GeorgianRailwayApi.Middleware;
+using AutoMapper;
+using GeorgianRailwayApi.Mapping;
+using Microsoft.Extensions.Caching.Memory;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+
+// Entity Framework Core
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
+builder.Services.AddScoped<ITrainRepository, TrainRepository>();
+
+
+// Register MediatR
+builder.Services.AddMediatR(typeof(Program).Assembly);
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// Register in-memory cache
+builder.Services.AddMemoryCache();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "1.0.0", // Valid OpenAPI version format
+        Title = "Georgian Railway API",
+        Description = "API for booking and management of Georgian Railway"
+    });
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+    options.OperationFilter<SecurityRequirementsOperationFilter>();
+});
+
+builder.Services.AddAuthentication().AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        ValidateAudience = false,
+        ValidateIssuer = false,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value!))
+    };
+}); 
+var app = builder.Build();
+
+// Add global exception handler
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseSwagger(c =>
+{
+    c.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi2_0;
+});
+
+app.UseSwaggerUI();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+
+// Trust HTTPS development certificate
