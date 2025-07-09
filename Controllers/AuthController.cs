@@ -28,7 +28,6 @@ namespace GeorgianRailwayApi.Controllers
             _mediator = mediator;
             _cache = cache;
         }
-
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
@@ -69,6 +68,27 @@ namespace GeorgianRailwayApi.Controllers
                 return Unauthorized(problemDetails);
             }
             return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult GetCurrentUser()
+        {
+            var idClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var email = User.Claims.FirstOrDefault(c => c.Type == "email" || c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+            var role = User.Claims.FirstOrDefault(c => c.Type == "role" || c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            if (email == null || idClaim == null)
+            {
+                return Unauthorized(new { error = "User not found in token." });
+            }
+
+            return Ok(new
+            {
+                Id = int.TryParse(idClaim, out var id) ? id : 0,
+                Email = email,
+                Role = role
+            });
         }
     }
 }

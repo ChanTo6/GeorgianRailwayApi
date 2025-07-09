@@ -22,11 +22,14 @@ namespace GeorgianRailwayApi.Controllers
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
-        public UserController(IMediator mediator, IMapper mapper, IMemoryCache cache)
+        private readonly ApplicationDbContext _context;
+
+        public UserController(IMediator mediator, IMapper mapper, IMemoryCache cache, ApplicationDbContext context)
         {
             _mediator = mediator;
             _mapper = mapper;
             _cache = cache;
+            _context = context;
         }
 
         [HttpGet("all-trains")]
@@ -89,6 +92,15 @@ namespace GeorgianRailwayApi.Controllers
             // Invalidate train list cache after purchase
             _cache.Remove("train_list");
             return Ok(result);
+        }
+
+        [HttpGet("sold-ticket/{id}")]
+        public async Task<IActionResult> GetSoldTicketById(int id)
+        {
+            var dto = await _mediator.Send(new GeorgianRailwayApi.Features.UserPanel.SoldTickets.GetSoldTicketByIdQuery { TicketId = id });
+            if (dto == null)
+                return NotFound(new { error = $"Sold ticket with id {id} not found." });
+            return Ok(dto);
         }
     }
 }

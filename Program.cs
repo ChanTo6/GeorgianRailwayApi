@@ -80,7 +80,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseCors(police => police.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 app.Run();
 
 // Trust HTTPS development certificate

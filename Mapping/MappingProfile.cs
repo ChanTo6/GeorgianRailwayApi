@@ -10,7 +10,8 @@ namespace GeorgianRailwayApi.Mapping
         public MappingProfile()
         {
             CreateMap<User, RegisterResponseDto>();
-            // Remove RegisterCommand -> User mapping to fix error
+            CreateMap<RegisterCommand, User>()
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => MapRole(src.Role)));
 
             // Ticket -> SoldTicketDto
             CreateMap<Ticket, SoldTicketDto>()
