@@ -26,6 +26,7 @@ builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ITicketRepository, TicketRepository>();
 builder.Services.AddScoped<ITrainRepository, TrainRepository>();
+builder.Services.AddScoped<GeorgianRailwayApi.Services.Email.IEmailService, GeorgianRailwayApi.Services.Email.EmailService>();
 
 
 // Register MediatR

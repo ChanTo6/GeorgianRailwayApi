@@ -24,4 +24,10 @@ namespace GeorgianRailwayApi.DTOs
     {
         public string Token { get; set; }
     }
+
+    public class VerifyPinRequestDto
+    {
+        public string Email { get; set; }
+        public string Pin { get; set; }
+    }
 }

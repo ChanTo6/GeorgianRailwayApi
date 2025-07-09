@@ -8,6 +8,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using GeorgianRailwayApi.DTOs;
 using AutoMapper;
+using GeorgianRailwayApi.Services.Email;
 
 namespace GeorgianRailwayApi.Features.Auth.Register
 {
@@ -15,10 +16,12 @@ namespace GeorgianRailwayApi.Features.Auth.Register
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
-        public RegisterCommandHandler(ApplicationDbContext context, IMapper mapper)
+        private readonly IEmailService _emailService;
+        public RegisterCommandHandler(ApplicationDbContext context, IMapper mapper, IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
+            _emailService = emailService;
         }
         public async Task<RegisterResponseDto> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
@@ -27,8 +30,11 @@ namespace GeorgianRailwayApi.Features.Auth.Register
 
             var user = _mapper.Map<User>(request);
             user.Password = HashPassword(request.Password);
+            user.IsVerified = false;
+            user.VerificationPin = GeneratePin();
             _context.Users.Add(user);
             await _context.SaveChangesAsync(cancellationToken);
+            await _emailService.SendEmailAsync(user.Email, "Your Registration PIN", $"Your verification PIN is: {user.VerificationPin}");
             return _mapper.Map<RegisterResponseDto>(user);
         }
         private string HashPassword(string password)
@@ -39,6 +45,11 @@ namespace GeorgianRailwayApi.Features.Auth.Register
                 var hash = sha256.ComputeHash(bytes);
                 return Convert.ToBase64String(hash);
             }
+        }
+        private string GeneratePin()
+        {
+            var rng = new Random();
+            return rng.Next(100000, 999999).ToString();
         }
     }
 }
