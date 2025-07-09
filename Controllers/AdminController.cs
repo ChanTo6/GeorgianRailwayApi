@@ -5,14 +5,13 @@ using GeorgianRailwayApi.Models;
 using GeorgianRailwayApi.Data;
 using System.Threading.Tasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
+
 using GeorgianRailwayApi.DTOs;
 using AutoMapper;
-using GeorgianRailwayApi.Features.Admin.SoldTickets;
-using System.Collections.Generic;
+
 using Microsoft.Extensions.Caching.Memory;
 using System;
+using GeorgianRailwayApi.Features.Admin.SoldTickets;
 
 namespace GeorgianRailwayApi.Controllers
 {
@@ -61,9 +60,27 @@ namespace GeorgianRailwayApi.Controllers
         [HttpGet("sold-tickets")]
         public async Task<IActionResult> GetSoldTickets()
         {
-            // Do not cache sold tickets (dynamic data)
             var soldTickets = await _mediator.Send(new GetSoldTicketsQuery());
             return Ok(soldTickets);
+        }
+
+        // --- Private helpers ---
+        private static List<string> ValidateTrain(TrainRequestDto dto)
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                errors.Add("Train name is required.");
+            if (string.IsNullOrWhiteSpace(dto.Source))
+                errors.Add("Source is required.");
+            if (string.IsNullOrWhiteSpace(dto.Destination))
+                errors.Add("Destination is required.");
+            if (dto.TotalSeats <= 0)
+                errors.Add("Total seats must be greater than zero.");
+            if (dto.Date == default)
+                errors.Add("Date is required.");
+            if (string.IsNullOrWhiteSpace(dto.Time))
+                errors.Add("Time is required.");
+            return errors;
         }
     }
 }

@@ -8,3 +8,4 @@ namespace GeorgianRailwayApi.Features.Admin.SoldTickets
     {
     }
 }
+

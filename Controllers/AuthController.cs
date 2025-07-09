@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using GeorgianRailwayApi.Models;
-using GeorgianRailwayApi.Services.Token;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using GeorgianRailwayApi.Data;
-using System.Security.Cryptography;
-using System.Text;
 using MediatR;
 using GeorgianRailwayApi.Features.Auth.Register;
 using GeorgianRailwayApi.Features.Auth.Login;
@@ -29,65 +27,52 @@ namespace GeorgianRailwayApi.Controllers
             _cache = cache;
         }
 
-
-        [HttpPost("verify-pin")]
-        public async Task<IActionResult> VerifyPin([FromBody] VerifyPinRequestDto dto, [FromServices] GeorgianRailwayApi.Data.ApplicationDbContext db)
-        {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null)
-                return NotFound(new { error = "User not found." });
-            if (user.IsVerified)
-                return BadRequest(new { error = "User already verified." });
-            if (user.VerificationPin != dto.Pin)
-                return BadRequest(new { error = "Invalid PIN code." });
-            user.IsVerified = true;
-            user.VerificationPin = null;
-            await db.SaveChangesAsync();
-            return Ok(new { message = "Account verified successfully." });
-        }
-
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
+            var errors = ValidateRegister(dto);
+            if (errors.Count > 0)
+                return BadRequest(ApiErrorResponse.Validation("Validation failed", errors));
+
             var command = new RegisterCommand { Email = dto.Email, Password = dto.Password, Role = dto.Role };
             var result = await _mediator.Send(command);
             if (result == null)
-            {
-                var problemDetails = new ProblemDetails
-                {
-                    Title = "Registration failed",
-                    Detail = "Email already exists.",
-                    Status = StatusCodes.Status400BadRequest,
-                    Type = "https://httpstatuses.com/400"
-                };
-                problemDetails.Extensions["errorCode"] = "EmailExists";
-                return BadRequest(problemDetails);
-            }
-            // Invalidate train list cache in case admin registers
+                return BadRequest(ApiErrorResponse.Failure("Registration failed", "Email already exists.", "EmailExists"));
+
             _cache.Remove("train_list");
             return Ok(result);
         }
 
-
-
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
+            var errors = ValidateLogin(dto);
+            if (errors.Count > 0)
+                return BadRequest(ApiErrorResponse.Validation("Validation failed", errors));
+
             var command = new LoginCommand { Email = dto.Email, Password = dto.Password };
             var result = await _mediator.Send(command);
             if (result == null)
-            {
-                var problemDetails = new ProblemDetails
-                {
-                    Title = "Login failed",
-                    Detail = "Invalid email or password.",
-                    Status = StatusCodes.Status401Unauthorized,
-                    Type = "https://httpstatuses.com/401"
-                };
-                problemDetails.Extensions["errorCode"] = "InvalidCredentials";
-                return Unauthorized(problemDetails);
-            }
+                return Unauthorized(ApiErrorResponse.Failure("Login failed", "Invalid email or password.", "InvalidCredentials", StatusCodes.Status401Unauthorized));
+
             return Ok(result);
+        }
+
+        [HttpPost("verify-pin")]
+        public async Task<IActionResult> VerifyPin([FromBody] VerifyPinRequestDto dto, [FromServices] ApplicationDbContext db)
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (user == null)
+                return NotFound(ApiErrorResponse.Failure("Verification failed", "User not found.", "UserNotFound", StatusCodes.Status404NotFound));
+            if (user.IsVerified)
+                return BadRequest(ApiErrorResponse.Failure("Verification failed", "User already verified.", "AlreadyVerified"));
+            if (user.VerificationPin != dto.Pin)
+                return BadRequest(ApiErrorResponse.Failure("Verification failed", "Invalid PIN code.", "InvalidPin"));
+
+            user.IsVerified = true;
+            user.VerificationPin = null;
+            await db.SaveChangesAsync();
+            return Ok(new { message = "Account verified successfully." });
         }
 
         [Authorize]
@@ -100,7 +85,7 @@ namespace GeorgianRailwayApi.Controllers
 
             if (email == null || idClaim == null)
             {
-                return Unauthorized(new { error = "User not found in token." });
+                return Unauthorized(ApiErrorResponse.Failure("Unauthorized", "User not found in token.", "UserNotFoundInToken", StatusCodes.Status401Unauthorized));
             }
 
             return Ok(new
@@ -111,6 +96,33 @@ namespace GeorgianRailwayApi.Controllers
             });
         }
 
-      
+        // --- Private helpers ---
+        private static List<string> ValidateRegister(RegisterRequestDto dto)
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(dto.Email))
+                errors.Add("Email is required.");
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                errors.Add("Email format is invalid.");
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                errors.Add("Password is required.");
+            else if (dto.Password.Length < 6)
+                errors.Add("Password must be at least 6 characters.");
+            return errors;
+        }
+
+        private static List<string> ValidateLogin(LoginRequestDto dto)
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(dto.Email))
+                errors.Add("Email is required.");
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                errors.Add("Email format is invalid.");
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                errors.Add("Password is required.");
+            else if (dto.Password.Length < 6)
+                errors.Add("Password must be at least 6 characters.");
+            return errors;
+        }
     }
 }

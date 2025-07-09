@@ -2,16 +2,11 @@
 using GeorgianRailwayApi.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using static GeorgianRailwayApi.Features.UserPanel.BookSeatInfo.BookSeatCommand;
-using static GeorgianRailwayApi.Features.UserPanel.SearchTrainsInfo.SearchTrainsQuery;
-using GeorgianRailwayApi.Features.UserPanel.BuyTickets;
-using GeorgianRailwayApi.DTOs;
 using AutoMapper;
-using System.Collections.Generic;
 using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Generic;
 using System;
-using GeorgianRailwayApi.Features;
+using GeorgianRailwayApi.DTOs;
 
 namespace GeorgianRailwayApi.Controllers
 {
@@ -37,7 +32,7 @@ namespace GeorgianRailwayApi.Controllers
         {
             if (!_cache.TryGetValue("train_list", out List<TrainResponseDto> dtoList))
             {
-                var result = await _mediator.Send(new GetAllTrains.Query());
+                var result = await _mediator.Send(new Features.UserPanel.GetAllTrains.Query());
                 dtoList = _mapper.Map<List<TrainResponseDto>>(result);
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
                     .SetSlidingExpiration(TimeSpan.FromMinutes(10));
@@ -46,22 +41,16 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(dtoList);
         }
 
-
         [HttpGet("search-trains")]
         public async Task<IActionResult> SearchTrains([FromQuery] string source, [FromQuery] string destination)
         {
-            if (string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(destination))
-            {
-                var problemDetails = new ProblemDetails
-                {
-                    Title = "Invalid search parameters",
-                    Detail = "Source and Destination must be provided.",
-                    Status = StatusCodes.Status400BadRequest,
-                    Type = "https://httpstatuses.com/400"
-                };
-                problemDetails.Extensions["errorCode"] = "MissingSearchParams";
-                return BadRequest(problemDetails);
-            }
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(source))
+                errors.Add("Source is required.");
+            if (string.IsNullOrWhiteSpace(destination))
+                errors.Add("Destination is required.");
+            if (errors.Count > 0)
+                return BadRequest(ApiErrorResponse.Validation("Validation failed", errors));
 
             var result = await _mediator.Send(new Features.UserPanel.SearchTrainsInfo.SearchTrainsQuery.Query { Source = source, Destination = destination });
             var dtoList = _mapper.Map<List<TrainResponseDto>>(result);
@@ -71,25 +60,19 @@ namespace GeorgianRailwayApi.Controllers
         [HttpPost("buy")]
         public async Task<IActionResult> BuyTickets([FromBody] TicketPurchaseRequestDto request)
         {
+            var errors = ValidateTicketPurchase(request);
+            if (errors.Count > 0)
+                return BadRequest(ApiErrorResponse.Validation("Validation failed", errors));
+
             var command = new Features.UserPanel.BuyTickets.BuyTicketsCommand
             {
                 UserId = request.UserId,
-                Tickets = request.Tickets // Already TicketPurchaseDto
+                Tickets = request.Tickets
             };
             var result = await _mediator.Send(command);
             if (!result.Success)
-            {
-                var problemDetails = new ProblemDetails
-                {
-                    Title = "Ticket purchase failed",
-                    Detail = result.Message,
-                    Status = StatusCodes.Status400BadRequest,
-                    Type = "https://httpstatuses.com/400"
-                };
-                problemDetails.Extensions["errorCode"] = "TicketPurchaseFailed";
-                return BadRequest(problemDetails);
-            }
-            // Invalidate train list cache after purchase
+                return BadRequest(ApiErrorResponse.Failure("Ticket purchase failed", result.Message, "TicketPurchaseFailed"));
+
             _cache.Remove("train_list");
             return Ok(result);
         }
@@ -97,10 +80,26 @@ namespace GeorgianRailwayApi.Controllers
         [HttpGet("sold-ticket/{id}")]
         public async Task<IActionResult> GetSoldTicketById(int id)
         {
-            var dto = await _mediator.Send(new GeorgianRailwayApi.Features.UserPanel.SoldTickets.GetSoldTicketByIdQuery { TicketId = id });
+            var dto = await _mediator.Send(new Features.UserPanel.SoldTickets.GetSoldTicketByIdQuery { TicketId = id });
             if (dto == null)
-                return NotFound(new { error = $"Sold ticket with id {id} not found." });
+                return NotFound(ApiErrorResponse.Failure("Not found", $"Sold ticket with id {id} not found.", "SoldTicketNotFound", StatusCodes.Status404NotFound));
             return Ok(dto);
+        }
+
+        // --- Private helpers ---
+        private static List<string> ValidateTicketPurchase(TicketPurchaseRequestDto request)
+        {
+            var errors = new List<string>();
+            if (request == null)
+            {
+                errors.Add("Request body is required.");
+                return errors;
+            }
+            if (request.UserId <= 0)
+                errors.Add("UserId is required and must be greater than zero.");
+            if (request.Tickets == null || request.Tickets.Count == 0)
+                errors.Add("At least one ticket must be provided.");
+            return errors;
         }
     }
 }
