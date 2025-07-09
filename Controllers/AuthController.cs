@@ -28,6 +28,24 @@ namespace GeorgianRailwayApi.Controllers
             _mediator = mediator;
             _cache = cache;
         }
+
+
+        [HttpPost("verify-pin")]
+        public async Task<IActionResult> VerifyPin([FromBody] VerifyPinRequestDto dto, [FromServices] GeorgianRailwayApi.Data.ApplicationDbContext db)
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (user == null)
+                return NotFound(new { error = "User not found." });
+            if (user.IsVerified)
+                return BadRequest(new { error = "User already verified." });
+            if (user.VerificationPin != dto.Pin)
+                return BadRequest(new { error = "Invalid PIN code." });
+            user.IsVerified = true;
+            user.VerificationPin = null;
+            await db.SaveChangesAsync();
+            return Ok(new { message = "Account verified successfully." });
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
@@ -49,6 +67,8 @@ namespace GeorgianRailwayApi.Controllers
             _cache.Remove("train_list");
             return Ok(result);
         }
+
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
@@ -91,20 +111,6 @@ namespace GeorgianRailwayApi.Controllers
             });
         }
 
-        [HttpPost("verify-pin")]
-        public async Task<IActionResult> VerifyPin([FromBody] VerifyPinRequestDto dto, [FromServices] GeorgianRailwayApi.Data.ApplicationDbContext db)
-        {
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null)
-                return NotFound(new { error = "User not found." });
-            if (user.IsVerified)
-                return BadRequest(new { error = "User already verified." });
-            if (user.VerificationPin != dto.Pin)
-                return BadRequest(new { error = "Invalid PIN code." });
-            user.IsVerified = true;
-            user.VerificationPin = null;
-            await db.SaveChangesAsync();
-            return Ok(new { message = "Account verified successfully." });
-        }
+      
     }
 }

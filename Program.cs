@@ -13,10 +13,13 @@ using GeorgianRailwayApi.Middleware;
 using AutoMapper;
 using GeorgianRailwayApi.Mapping;
 using Microsoft.Extensions.Caching.Memory;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<RegisterRequestDtoValidator>());
+;
 
 // Entity Framework Core
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
