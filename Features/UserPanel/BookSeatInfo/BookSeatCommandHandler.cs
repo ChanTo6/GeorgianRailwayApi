@@ -38,7 +38,7 @@ namespace GeorgianRailwayApi.Features.UserPanel.BookSeatInfo
                 {
                     Success = true,
                     Message = "Seat booked successfully.",
-                    SeatNumber = train.TotalSeats + 1 // Before decrement
+                    SeatNumber = train.TotalSeats + 1 
                 };
             }
         }

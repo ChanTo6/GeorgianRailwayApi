@@ -21,6 +21,6 @@ namespace GeorgianRailwayApi.Models
 
         public bool IsBooked { get; set; } = false;
 
-        public DateTime? PurchaseDate { get; set; } // New property for purchase date
+        public DateTime? PurchaseDate { get; set; } 
     }
 }

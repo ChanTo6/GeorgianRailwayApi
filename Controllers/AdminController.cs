@@ -31,7 +31,7 @@ namespace GeorgianRailwayApi.Controllers
             _cache = cache;
         }
 
-        // Admin: Add new train
+     
         [Authorize(Roles = "Admin")]
         [HttpPost("add-train")]
         public async Task<IActionResult> AddTrain([FromBody] TrainRequestDto trainDto)
@@ -48,14 +48,14 @@ namespace GeorgianRailwayApi.Controllers
                 problemDetails.Extensions["errorCode"] = "InvalidTrainData";
                 return BadRequest(problemDetails);
             }
-            // Use MediatR to send a command to add a train
+            
             var command = new Features.AdminPanel.AddTrain.AddTrainCommand { TrainDto = trainDto };
             var responseDto = await _mediator.Send(command);
             _cache.Remove("train_list");
             return Ok(responseDto);
         }
 
-        // Admin: View all bookings (report) via CQRS/MediatR and AutoMapper
+      
         [Authorize(Roles = "Admin")]
         [HttpGet("sold-tickets")]
         public async Task<IActionResult> GetSoldTickets()
@@ -64,7 +64,7 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(soldTickets);
         }
 
-        // --- Private helpers ---
+        
         private static List<string> ValidateTrain(TrainRequestDto dto)
         {
             var errors = new List<string>();

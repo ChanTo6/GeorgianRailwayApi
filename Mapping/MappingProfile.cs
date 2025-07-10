@@ -27,7 +27,7 @@ namespace GeorgianRailwayApi.Mapping
             CreateMap<Train, TrainResponseDto>();
             CreateMap<TrainRequestDto, Train>();
 
-            // Add more mappings as needed for other DTOs
+
         }
 
         private static UserRole MapRole(string role)

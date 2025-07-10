@@ -8,6 +8,6 @@ namespace GeorgianRailwayApi.DTOs
         public int SeatNumber { get; set; }
         public string BuyerEmail { get; set; }
         public int BuyerId { get; set; }
-        public DateTime? PurchaseDate { get; set; } // nullable if not tracked
+        public DateTime? PurchaseDate { get; set; } 
     }
 }

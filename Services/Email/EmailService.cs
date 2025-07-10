@@ -20,7 +20,7 @@ namespace GeorgianRailwayApi.Services.Email
         {
             try
             {
-                // Load SMTP settings from appsettings.json
+                
                 var smtpServer = _config["Email:SmtpServer"];
                 var smtpPort = int.Parse(_config["Email:SmtpPort"]);
                 var smtpUsername = _config["Email:SmtpUsername"];

@@ -70,14 +70,13 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
 }); 
 var app = builder.Build();
 
-// SEED ADMIN USER
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     GeorgianRailwayApi.Data.SeedData.SeedAdminUserAsync(dbContext).Wait();
 }
 
-// Add global exception handler
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseSwagger(c =>
@@ -94,4 +93,4 @@ app.MapControllers();
 app.UseCors(police => police.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 app.Run();
 
-// Trust HTTPS development certificate
+

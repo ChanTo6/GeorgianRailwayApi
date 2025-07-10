@@ -18,7 +18,7 @@ namespace GeorgianRailwayApi.Features.UserPanel.BuyTickets
             var dto = new TicketPurchaseRequestDto
             {
                 UserId = request.UserId,
-                Tickets = request.Tickets // Already TicketPurchaseDto
+                Tickets = request.Tickets 
             };
             return await _ticketService.BuyTicketsAsync(dto);
         }

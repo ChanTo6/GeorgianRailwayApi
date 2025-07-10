@@ -13,14 +13,14 @@ namespace GeorgianRailwayApi.Data
         public static async Task SeedAdminUserAsync(ApplicationDbContext context)
         {
             var adminEmail = "admin@georgianrailway.local";
-            var adminPassword = "Admin@12345"; // Change this after first login
+            var adminPassword = "Admin@12345"; 
             var hashedPassword = HashPassword(adminPassword);
 
-            // Try to find the admin user by email
+            
             var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
             if (adminUser == null)
             {
-                // Create default admin user if not exists
+                
                 adminUser = new User
                 {
                     Email = adminEmail,
@@ -32,7 +32,7 @@ namespace GeorgianRailwayApi.Data
             }
             else
             {
-                // Ensure the user has Admin role, correct password, and is verified
+               
                 adminUser.Password = hashedPassword;
                 adminUser.Role = UserRole.Admin;
                 adminUser.IsVerified = true;
