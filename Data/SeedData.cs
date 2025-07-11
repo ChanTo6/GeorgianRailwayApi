@@ -32,11 +32,7 @@ namespace GeorgianRailwayApi.Data
             }
             else
             {
-<<<<<<< HEAD
-               
-=======
-             
->>>>>>> 73621f9 (final)
+
                 adminUser.Password = hashedPassword;
                 adminUser.Role = UserRole.Admin;
                 adminUser.IsVerified = true;

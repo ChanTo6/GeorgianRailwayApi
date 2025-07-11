@@ -96,11 +96,7 @@ namespace GeorgianRailwayApi.Controllers
             });
         }
 
-<<<<<<< HEAD
-     
-=======
-        
->>>>>>> 73621f9 (final)
+
         private static List<string> ValidateRegister(RegisterRequestDto dto)
         {
             var errors = new List<string>();

@@ -69,10 +69,7 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
 }); 
 var app = builder.Build();
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 73621f9 (final)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

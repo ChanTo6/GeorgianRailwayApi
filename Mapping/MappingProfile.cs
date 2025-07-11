@@ -27,12 +27,10 @@ namespace GeorgianRailwayApi.Mapping
             CreateMap<Train, TrainResponseDto>();
             CreateMap<TrainRequestDto, Train>();
 
-<<<<<<< HEAD
 
-=======
            
             CreateMap<User, UpdateRequestDto>();
->>>>>>> 73621f9 (final)
+
         }
 
         private static UserRole MapRole(string role)

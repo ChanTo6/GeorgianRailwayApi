@@ -39,14 +39,9 @@ namespace GeorgianRailwayApi.Controllers
         //var adminEmail = "admin@georgianrailway.local";
         //var adminPassword = "Admin@12345"
 
-<<<<<<< HEAD
-     
-        [Authorize(Roles = "Admin")]
-=======
 
     // Admin: Add new train
     [Authorize(Roles = "Admin")]
->>>>>>> 73621f9 (final)
         [HttpPost("add-train")]
         public async Task<IActionResult> AddTrain([FromBody] TrainRequestDto trainDto)
         {
@@ -62,17 +57,13 @@ namespace GeorgianRailwayApi.Controllers
                 problemDetails.Status = StatusCodes.Status400BadRequest;
                 return BadRequest(problemDetails);
             }
-            
+            // Use MediatR to send a command to add a train
             var command = new Features.AdminPanel.AddTrain.AddTrainCommand { TrainDto = trainDto };
             var responseDto = await _mediator.Send(command);
             _cache.Remove("train_list");
             return Ok(responseDto);
         }
 
-<<<<<<< HEAD
-      
-=======
->>>>>>> 73621f9 (final)
         [Authorize(Roles = "Admin")]
         [HttpGet("sold-tickets")]
         public async Task<IActionResult> GetSoldTickets()
@@ -81,10 +72,6 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(soldTickets);
         }
 
-<<<<<<< HEAD
-        
-        private static List<string> ValidateTrain(TrainRequestDto dto)
-=======
      
         [Authorize(Roles = "Admin")]
         [HttpGet("all-users")]
@@ -143,7 +130,6 @@ namespace GeorgianRailwayApi.Controllers
         }
 
         private static List<string> ValidateRegister(RegisterRequestDto dto)
->>>>>>> 73621f9 (final)
         {
             var errors = new List<string>();
             if (string.IsNullOrWhiteSpace(dto.Email))
