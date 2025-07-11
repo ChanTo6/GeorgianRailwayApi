@@ -26,12 +26,13 @@ namespace GeorgianRailwayApi.Repositories.TicketRepositoryFile
             return await _context.Tickets.Include(t => t.Train).Include(t => t.User).Where(t => t.IsBooked).ToListAsync();
         }
 
-        public async Task<Ticket> GetSoldTicketByIdAsync(int userId)
+        public async Task<List<Ticket>> GetSoldTicketsByUserIdAsync(int userId)
         {
             return await _context.Tickets
                 .Include(t => t.Train)
                 .Include(t => t.User)
-                .FirstOrDefaultAsync(t => t.UserId == userId && t.IsBooked);
+                .Where(t => t.UserId == userId && t.IsBooked)
+                .ToListAsync();
         }
     }
 }

@@ -3,8 +3,8 @@ using MediatR;
 
 namespace GeorgianRailwayApi.Features.UserPanel.SoldTickets
 {
-    public class GetSoldTicketByIdQuery : IRequest<SoldTicketDto>
+    public class GetSoldTicketsByUserIdQuery : IRequest<List<SoldTicketDto>>
     {
-        public int TicketId { get; set; }
+        public int UserId { get; set; }
     }
 }

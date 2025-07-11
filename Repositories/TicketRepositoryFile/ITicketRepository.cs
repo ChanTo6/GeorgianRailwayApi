@@ -9,6 +9,7 @@ namespace GeorgianRailwayApi.Repositories.TicketRepositoryFile
         Task<bool> IsSeatBookedAsync(int trainId, int seatNumber);
         Task AddTicketAsync(Ticket ticket);
         Task<List<Ticket>> GetSoldTicketsAsync();
-        Task<Ticket> GetSoldTicketByIdAsync(int ticketId);
+        Task<List<Ticket>> GetSoldTicketsByUserIdAsync(int userId);
+
     }
 }

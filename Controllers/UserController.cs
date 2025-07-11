@@ -1,12 +1,13 @@
-﻿using GeorgianRailwayApi.Data;
+﻿using AutoMapper;
+using GeorgianRailwayApi.Data;
+using GeorgianRailwayApi.DTOs;
+using GeorgianRailwayApi.Features.UserPanel.SoldTickets;
 using GeorgianRailwayApi.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Generic;
 using System;
-using GeorgianRailwayApi.DTOs;
+using System.Collections.Generic;
 
 namespace GeorgianRailwayApi.Controllers
 {
@@ -77,16 +78,21 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("sold-ticket/{id}")]
-        public async Task<IActionResult> GetSoldTicketById(int id)
+      
+
+
+        [HttpGet("sold-tickets/{userId}")]
+        public async Task<IActionResult> GetSoldTicketsByUserId(int userId)
         {
-            var dto = await _mediator.Send(new Features.UserPanel.SoldTickets.GetSoldTicketByIdQuery { TicketId = id });
-            if (dto == null)
-                return NotFound(ApiErrorResponse.Failure("Not found", $"Sold ticket with id {id} not found.", "SoldTicketNotFound", StatusCodes.Status404NotFound));
-            return Ok(dto);
+            var dtos = await _mediator.Send(new GetSoldTicketsByUserIdQuery { UserId = userId });
+            if (dtos == null || !dtos.Any())
+                return NotFound(ApiErrorResponse.Failure("Not found", $"No sold tickets for user {userId}.", "SoldTicketsNotFound", StatusCodes.Status404NotFound));
+
+            return Ok(dtos);
         }
 
-        // --- Private helpers ---
+
+       
         private static List<string> ValidateTicketPurchase(TicketPurchaseRequestDto request)
         {
             var errors = new List<string>();

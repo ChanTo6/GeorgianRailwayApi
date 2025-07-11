@@ -12,6 +12,8 @@ using AutoMapper;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using GeorgianRailwayApi.Features.Admin.SoldTickets;
+using FluentValidation;
+using GeorgianRailwayApi.Features.Auth.Register;
 
 namespace GeorgianRailwayApi.Controllers
 {
@@ -19,33 +21,45 @@ namespace GeorgianRailwayApi.Controllers
     [ApiController]
     public class AdminController : ControllerBase
     {
+
+
         private readonly ApplicationDbContext _context;
         private readonly IMediator _mediator;
         private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
-        public AdminController(ApplicationDbContext context, IMediator mediator, IMapper mapper, IMemoryCache cache)
+        private readonly IValidator<TrainRequestDto> _trainValidator;
+        public AdminController(ApplicationDbContext context, IMediator mediator, IMapper mapper, IMemoryCache cache, IValidator<TrainRequestDto> trainValidator)
         {
             _context = context;
             _mediator = mediator;
             _mapper = mapper;
             _cache = cache;
+            _trainValidator = trainValidator;
         }
+        //var adminEmail = "admin@georgianrailway.local";
+        //var adminPassword = "Admin@12345"
 
+<<<<<<< HEAD
      
         [Authorize(Roles = "Admin")]
+=======
+
+    // Admin: Add new train
+    [Authorize(Roles = "Admin")]
+>>>>>>> 73621f9 (final)
         [HttpPost("add-train")]
         public async Task<IActionResult> AddTrain([FromBody] TrainRequestDto trainDto)
         {
-            if (string.IsNullOrWhiteSpace(trainDto.Name) || string.IsNullOrWhiteSpace(trainDto.Source) || string.IsNullOrWhiteSpace(trainDto.Destination))
+            var validationResult = await _trainValidator.ValidateAsync(trainDto);
+            if (!validationResult.IsValid)
             {
-                var problemDetails = new ProblemDetails
+                var problemDetails = new ValidationProblemDetails();
+                foreach (var error in validationResult.Errors)
                 {
-                    Title = "Invalid train data",
-                    Detail = "Train name, source, and destination are required.",
-                    Status = StatusCodes.Status400BadRequest,
-                    Type = "https://httpstatuses.com/400"
-                };
-                problemDetails.Extensions["errorCode"] = "InvalidTrainData";
+                    problemDetails.Errors.Add(error.PropertyName, new[] { error.ErrorMessage });
+                }
+                problemDetails.Title = "Validation Failed";
+                problemDetails.Status = StatusCodes.Status400BadRequest;
                 return BadRequest(problemDetails);
             }
             
@@ -55,7 +69,10 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(responseDto);
         }
 
+<<<<<<< HEAD
       
+=======
+>>>>>>> 73621f9 (final)
         [Authorize(Roles = "Admin")]
         [HttpGet("sold-tickets")]
         public async Task<IActionResult> GetSoldTickets()
@@ -64,23 +81,82 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(soldTickets);
         }
 
+<<<<<<< HEAD
         
         private static List<string> ValidateTrain(TrainRequestDto dto)
+=======
+     
+        [Authorize(Roles = "Admin")]
+        [HttpGet("all-users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _mediator.Send(new Features.AdminPanel.GetAllUsers.GetAllUsersQuery());
+            return Ok(users);
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("add-user")]
+        public async Task<IActionResult> AddUser([FromBody] RegisterRequestDto dto)
+        {
+            var errors = ValidateRegister(dto);
+            if (errors.Count > 0)
+                return BadRequest(ApiErrorResponse.Validation("Validation failed", errors));
+
+            var command = new RegisterCommand { Email = dto.Email, Password = dto.Password, Role = dto.Role };
+            var result = await _mediator.Send(command);
+            if (result == null)
+                return BadRequest(ApiErrorResponse.Failure("Registration failed", "Email already exists.", "EmailExists"));
+
+           
+            return Ok(result);
+        }
+
+        // Admin: Update user
+        [Authorize(Roles = "Admin")]
+        [HttpPut("update-user/{id}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateRequestDto dto)
+        {
+            var command = new Features.AdminPanel.UpdateUser.UpdateUserCommand
+            {
+                Id = id,
+                Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email,
+                Role = string.IsNullOrWhiteSpace(dto.Role) ? null : dto.Role
+            };
+            var result = await _mediator.Send(command);
+            if (result == null)
+                return NotFound(ApiErrorResponse.Failure("Update failed", "User not found.", "UserNotFound"));
+            return Ok(result);
+        }
+
+
+
+        // Admin: Delete user
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("delete-user/{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var result = await _mediator.Send(new Features.AdminPanel.DeleteUser.DeleteUserCommand { Id = id });
+            if (!result)
+                return NotFound(ApiErrorResponse.Failure("Delete failed", "User not found.", "UserNotFound"));
+            return Ok(new { message = "User deleted successfully." });
+        }
+
+        private static List<string> ValidateRegister(RegisterRequestDto dto)
+>>>>>>> 73621f9 (final)
         {
             var errors = new List<string>();
-            if (string.IsNullOrWhiteSpace(dto.Name))
-                errors.Add("Train name is required.");
-            if (string.IsNullOrWhiteSpace(dto.Source))
-                errors.Add("Source is required.");
-            if (string.IsNullOrWhiteSpace(dto.Destination))
-                errors.Add("Destination is required.");
-            if (dto.TotalSeats <= 0)
-                errors.Add("Total seats must be greater than zero.");
-            if (dto.Date == default)
-                errors.Add("Date is required.");
-            if (string.IsNullOrWhiteSpace(dto.Time))
-                errors.Add("Time is required.");
+            if (string.IsNullOrWhiteSpace(dto.Email))
+                errors.Add("Email is required.");
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                errors.Add("Email format is invalid.");
+            if (string.IsNullOrWhiteSpace(dto.Password))
+                errors.Add("Password is required.");
+            else if (dto.Password.Length < 6)
+                errors.Add("Password must be at least 6 characters.");
             return errors;
         }
     }
+
+
 }

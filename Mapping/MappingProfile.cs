@@ -13,7 +13,7 @@ namespace GeorgianRailwayApi.Mapping
             CreateMap<RegisterCommand, User>()
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => MapRole(src.Role)));
 
-            // Ticket -> SoldTicketDto
+          
             CreateMap<Ticket, SoldTicketDto>()
                 .ForMember(dest => dest.TicketId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.TrainName, opt => opt.MapFrom(src => src.Train.Name))
@@ -23,11 +23,16 @@ namespace GeorgianRailwayApi.Mapping
                 .ForMember(dest => dest.BuyerId, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.PurchaseDate, opt => opt.MapFrom(src => src.PurchaseDate));
 
-            // Train <-> Train DTOs
+        
             CreateMap<Train, TrainResponseDto>();
             CreateMap<TrainRequestDto, Train>();
 
+<<<<<<< HEAD
 
+=======
+           
+            CreateMap<User, UpdateRequestDto>();
+>>>>>>> 73621f9 (final)
         }
 
         private static UserRole MapRole(string role)

@@ -21,7 +21,7 @@ builder.Services.AddControllers()
     .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<RegisterRequestDtoValidator>());
 ;
 
-// Entity Framework Core
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -32,13 +32,12 @@ builder.Services.AddScoped<ITrainRepository, TrainRepository>();
 builder.Services.AddScoped<GeorgianRailwayApi.Services.Email.IEmailService, GeorgianRailwayApi.Services.Email.EmailService>();
 
 
-// Register MediatR
+
 builder.Services.AddMediatR(typeof(Program).Assembly);
 
-// Register AutoMapper
+
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// Register in-memory cache
 builder.Services.AddMemoryCache();
 
 builder.Services.AddSwaggerGen(options =>
@@ -70,6 +69,10 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
 }); 
 var app = builder.Build();
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 73621f9 (final)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
