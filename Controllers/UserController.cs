@@ -4,10 +4,13 @@ using GeorgianRailwayApi.DTOs;
 using GeorgianRailwayApi.Features.UserPanel.SoldTickets;
 using GeorgianRailwayApi.Models;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace GeorgianRailwayApi.Controllers
 {
@@ -78,9 +81,6 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(result);
         }
 
-      
-
-
         [HttpGet("sold-tickets/{userId}")]
         public async Task<IActionResult> GetSoldTicketsByUserId(int userId)
         {
@@ -91,8 +91,57 @@ namespace GeorgianRailwayApi.Controllers
             return Ok(dtos);
         }
 
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ApiErrorResponse.Failure("Unauthorized", "User is not logged in.", "Unauthorized", StatusCodes.Status401Unauthorized));
 
-       
+            var dto = await _mediator.Send(new Features.UserPanel.Profile.GetProfileQuery { UserId = userId });
+            if (dto == null)
+                return NotFound(ApiErrorResponse.Failure("Not found", "User not found.", "UserNotFound", StatusCodes.Status404NotFound));
+            return Ok(dto);
+        }
+
+        [Authorize]
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateUser([FromBody] DTOs.UpdateRequestDto dto)
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ApiErrorResponse.Failure("Unauthorized", "User is not logged in.", "Unauthorized", StatusCodes.Status401Unauthorized));
+            if (dto.Id != userId)
+                return Forbid();
+
+            var command = new Features.UserPanel.Profile.UpdateProfileCommand
+            {
+                Id = userId,
+                Email = dto.Email, // Only update if provided
+                Password = dto.Password // Only update if provided
+            };
+            var result = await _mediator.Send(command);
+            if (result == null)
+                return NotFound(ApiErrorResponse.Failure("Not found", "User not found.", "UserNotFound", StatusCodes.Status404NotFound));
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpDelete("delete")]
+        public async Task<IActionResult> DeleteUser()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(ApiErrorResponse.Failure("Unauthorized", "User is not logged in.", "Unauthorized", StatusCodes.Status401Unauthorized));
+
+            var command = new Features.UserPanel.Profile.DeleteProfileCommand { Id = userId };
+            var result = await _mediator.Send(command);
+            if (!result)
+                return NotFound(ApiErrorResponse.Failure("Not found", "User not found.", "UserNotFound", StatusCodes.Status404NotFound));
+            return Ok(new { message = "User deleted successfully." });
+        }
+
         private static List<string> ValidateTicketPurchase(TicketPurchaseRequestDto request)
         {
             var errors = new List<string>();
